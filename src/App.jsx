@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Shield, AlertTriangle, Loader, ArrowRight } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Loader, ArrowRight, Cpu, FileText, Command } from 'lucide-react';
 
 const DEMOS = {
   contradiction: [
