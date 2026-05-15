@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Shield, AlertTriangle, Loader, ArrowRight, CheckCircle, Cpu, FileText, Command, Mic, MicOff, Square } from 'lucide-react';
+import { Shield, AlertTriangle, Loader, ArrowRight, CheckCircle, Cpu, FileText, Command, Mic, Square, Type, Radio } from 'lucide-react';
 
 const DEMOS = {
   contradiction: [
@@ -11,18 +11,6 @@ const DEMOS = {
       a: 'All disputes arising under this agreement shall be resolved exclusively through binding arbitration. Neither party may initiate litigation in any court of law.',
       b: 'Either party may bring any claim or dispute arising from this agreement before the courts of the State of Delaware, which shall have exclusive jurisdiction over all such matters.',
     },
-    {
-      a: 'Seller expressly warrants that it holds clear and unencumbered title to all goods sold hereunder and that the buyer shall receive good title free of all liens and claims.',
-      b: 'Seller makes no warranty of title and expressly disclaims any representation regarding ownership or encumbrances. Buyer accepts all goods subject to any existing claims or liens.',
-    },
-    {
-      a: 'This agreement may not be assigned or transferred by either party without the prior written consent of the other party.',
-      b: 'Either party may freely assign this agreement to any successor entity without the consent of the other party.',
-    },
-    {
-      a: 'All data submitted to the platform and outputs derived therefrom shall become the exclusive property of the service provider and may be used for platform improvement.',
-      b: 'All client data and derived outputs remain the exclusive property of the client. The service provider acquires no ownership rights and shall not use client data for any purpose beyond direct service delivery.',
-    },
   ],
   clear: [
     {
@@ -33,22 +21,11 @@ const DEMOS = {
       a: 'This agreement shall be governed by and construed in accordance with the laws of the State of New York, without regard to its conflict of laws provisions.',
       b: 'The parties agree that any legal matter arising from this contract shall be interpreted under New York state law, excluding its choice of law rules.',
     },
-    {
-      a: 'The vendor warrants that all delivered software shall be free from material defects for a period of twelve (12) months following delivery.',
-      b: 'Supplier guarantees the product against material defects for one year from the date of delivery, during which time it will repair or replace defective items at no additional cost.',
-    },
-    {
-      a: 'Neither party shall be liable for delays or failures in performance resulting from circumstances beyond its reasonable control, including acts of God, natural disasters, or government actions.',
-      b: 'A party shall be excused from performance obligations to the extent caused by events outside its reasonable control such as natural disasters, pandemics, governmental orders, or acts of God.',
-    },
-    {
-      a: 'All notices under this agreement shall be in writing and delivered by certified mail or overnight courier to the address specified in Schedule A.',
-      b: 'Any notice required under this contract must be written and sent via certified post or recognized overnight delivery service to the addresses set forth in Schedule A.',
-    },
   ],
 };
 
 export default function ScrutAuditor() {
+  const [view, setView] = useState('text'); // 'text' or 'audio'
   const [clauseA, setClauseA] = useState('');
   const [clauseB, setClauseB] = useState('');
   const [result, setResult] = useState(null);
@@ -106,7 +83,7 @@ export default function ScrutAuditor() {
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
-      setAutoRunOnStop(true); // Schedule the audit to run automatically once state flushes
+      setAutoRunOnStop(true);
       return;
     }
 
@@ -116,7 +93,6 @@ export default function ScrutAuditor() {
       return;
     }
 
-    // Clear current statement and result to prepare for new dictation
     setClauseA('');
     setResult(null);
     setReason(null);
@@ -180,7 +156,6 @@ export default function ScrutAuditor() {
         resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 120);
 
-      // Follow-up call for the specific reason
       setReasonLoading(true);
       try {
         const res2 = await fetch('https://abhati27-law-auditor-api.hf.space/api/chat', {
@@ -265,10 +240,10 @@ export default function ScrutAuditor() {
           from { transform: rotate(0deg); }
           to   { transform: rotate(360deg); }
         }
-        @keyframes pulse-red {
-          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-          70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        @keyframes pulse-shadow {
+          0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+          70% { box-shadow: 0 0 0 15px rgba(220, 38, 38, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
         }
 
         .initially-hidden { opacity: 0; }
@@ -284,11 +259,11 @@ export default function ScrutAuditor() {
         .status-dot.offline { background-color: #EF4444; }
         .status-dot.checking { background-color: #D1D5DB; }
 
-        /* Nav */
+        /* Nav & Tabs */
         .navbar {
           position: fixed;
           top: 0; left: 0; right: 0;
-          height: 56px;
+          height: 64px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -297,6 +272,15 @@ export default function ScrutAuditor() {
           border-bottom: 1px solid var(--border);
           z-index: 1000;
         }
+
+        .tab-container {
+          display: flex; gap: 4px; background: var(--bg-base); padding: 4px; border-radius: 6px; border: 1px solid var(--border);
+        }
+        .tab-btn {
+          background: transparent; border: none; padding: 6px 14px; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s;
+        }
+        .tab-btn:hover { color: var(--text-main); }
+        .tab-btn.active { background: #fff; color: var(--text-main); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
         /* Textareas */
         .input-label {
@@ -368,136 +352,83 @@ export default function ScrutAuditor() {
           transition: background 0.15s ease;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
-        .primary-btn:hover:not(:disabled) {
-          background: var(--primary-hover);
+        .primary-btn:hover:not(:disabled) { background: var(--primary-hover); }
+        .primary-btn:disabled { background: #F3F4F6; border-color: var(--border); color: var(--text-light); cursor: not-allowed; box-shadow: none; }
+
+        /* Audio Dictation UI */
+        .dictation-zone {
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          background: #F9FAFB; border: 1px dashed var(--border); border-radius: 8px; padding: 48px 24px;
+          transition: all 0.3s ease;
         }
-        .primary-btn:disabled {
-          background: #F3F4F6;
-          border-color: var(--border);
-          color: var(--text-light);
-          cursor: not-allowed;
-          box-shadow: none;
+        .dictation-zone.listening {
+          background: #FEF2F2; border-color: #FCA5A5; border-style: solid;
         }
 
-        .dictate-btn {
-          background: #fff;
-          border: 1px solid var(--border);
-          color: var(--text-main);
-          font-family: 'Inter', sans-serif;
-          font-size: 13px;
-          font-weight: 500;
-          padding: 0 16px;
-          height: 36px;
-          border-radius: 4px;
-          cursor: pointer;
-          display: flex; align-items: center; justify-content: center; gap: 8px;
-          transition: all 0.15s ease;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        .massive-mic-btn {
+          width: 80px; height: 80px; border-radius: 50%;
+          background: var(--primary); color: #fff; border: none;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; transition: all 0.2s ease;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        .dictate-btn:hover { background: #F9FAFB; border-color: var(--border-focus); }
-        .dictate-btn.listening {
-          background: #FEF2F2;
-          color: #DC2626;
-          border-color: #FCA5A5;
-          animation: pulse-red 2s infinite;
+        .massive-mic-btn:hover { transform: scale(1.05); }
+        .massive-mic-btn.pulse {
+          background: #DC2626;
+          animation: pulse-shadow 2s infinite;
         }
 
-        .kbd-hint {
-          display: flex; align-items: center; gap: 4px;
-          font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-muted);
-        }
-        .kbd-key {
-          background: #F9FAFB; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border);
-          font-family: 'JetBrains Mono', monospace; font-size: 11px;
+        .live-transcript-box {
+          margin-top: 32px; width: 100%; max-width: 800px;
+          background: #fff; padding: 24px; border-radius: 8px; border: 1px solid var(--border);
+          font-size: 18px; line-height: 1.6; font-family: 'Times New Roman', Times, serif; color: var(--text-main);
+          min-height: 100px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         /* Report Container */
-        .report-container {
-          margin-top: 40px;
-          background: #fff;
-          border: 1px solid var(--border);
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-          border-radius: 4px;
-        }
-
-        .report-header {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 16px 24px;
-          border-bottom: 1px solid var(--border);
-          background: #F9FAFB;
-          border-radius: 4px 4px 0 0;
-        }
-        .report-title {
-          font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-main); margin: 0;
-        }
-        .status-pill {
-          font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em;
-        }
+        .report-container { margin-top: 40px; background: #fff; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border-radius: 4px; }
+        .report-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border); background: #F9FAFB; border-radius: 4px 4px 0 0; }
+        .report-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-main); margin: 0; }
+        .status-pill { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
         .status-pill.fail { background: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; }
         .status-pill.pass { background: #F0FDF4; color: #166534; border: 1px solid #86EFAC; }
-
         .report-body { padding: 32px 24px; }
-
-        .finding-section {
-          margin-bottom: 32px;
-        }
-        .finding-label {
-          font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: block;
-        }
-        .finding-text {
-          font-size: 15px; color: var(--text-main); line-height: 1.6; margin: 0;
-        }
-
-        .reason-loading {
-          opacity: 0.7;
-          animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.5; }
-          50% { opacity: 1; }
-        }
-
-        .comparison-table {
-          display: flex;
-          border: 1px solid var(--border);
-          border-radius: 4px;
-          overflow: hidden;
-        }
+        .finding-section { margin-bottom: 32px; }
+        .finding-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: block; }
+        .finding-text { font-size: 15px; color: var(--text-main); line-height: 1.6; margin: 0; }
+        .reason-loading { opacity: 0.7; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        .comparison-table { display: flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
         .table-col { flex: 1; border-right: 1px solid var(--border); background: #fff; width: 50%; }
         .table-col:last-child { border-right: none; }
-        
-        .table-head {
-          background: #F9FAFB; padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
-          border-bottom: 1px solid var(--border);
-        }
-        .table-cell {
-          padding: 16px;
-        }
-        .clause-text {
-          font-family: 'Times New Roman', Times, serif; font-size: 16px; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; margin: 0;
-        }
-
-        .report-footer {
-          display: flex; gap: 24px; padding: 12px 24px; background: #F9FAFB; border-top: 1px solid var(--border); border-radius: 0 0 4px 4px;
-        }
-        .meta-item {
-          font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); text-transform: uppercase;
-        }
+        .table-head { background: #F9FAFB; padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+        .table-cell { padding: 16px; }
+        .clause-text { font-family: 'Times New Roman', Times, serif; font-size: 16px; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; margin: 0; }
+        .report-footer { display: flex; gap: 24px; padding: 12px 24px; background: #F9FAFB; border-top: 1px solid var(--border); border-radius: 0 0 4px 4px; }
+        .meta-item { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
 
         @media (max-width: 900px) {
           .comparison-table { flex-direction: column; }
           .table-col { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
           .table-col:last-child { border-bottom: none; }
-          .main-content { padding: 80px 20px 60px; }
         }
       `}</style>
 
       <nav className={`navbar ${fadeClass(0)}`}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Shield size={18} color="var(--primary)" />
-          <h1 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-main)' }}>ScrutAuditor</h1>
-          <span style={{ color: 'var(--border)', margin: '0 8px' }}>|</span>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Contract Analysis</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Shield size={18} color="var(--primary)" />
+            <h1 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-main)' }}>ScrutAuditor</h1>
+          </div>
+          
+          <div className="tab-container">
+            <button onClick={() => setView('text')} className={`tab-btn ${view === 'text' ? 'active' : ''}`}>
+              <Type size={14} /> Document Audit
+            </button>
+            <button onClick={() => setView('audio')} className={`tab-btn ${view === 'audio' ? 'active' : ''}`}>
+              <Radio size={14} /> Live Audio Audit
+            </button>
+          </div>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -506,85 +437,109 @@ export default function ScrutAuditor() {
         </div>
       </nav>
 
-      <main className="main-content" style={{ maxWidth: '1000px', margin: '0 auto', padding: '90px 32px 80px' }}>
+      <main className="main-content" style={{ maxWidth: '1000px', margin: '0 auto', padding: '100px 32px 80px' }}>
         
         <div className={fadeClass(100)} style={{ marginBottom: '32px' }}>
           <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>
-            Audit Request
+            {view === 'text' ? 'Document Audit' : 'Live Audio Audit'}
           </h2>
           <p style={{ fontSize: '15px', color: 'var(--text-muted)', margin: 0 }}>
-            Compare active clauses against historical standards to identify material discrepancies.
+            {view === 'text' 
+              ? 'Compare written clauses against historical standards to identify material discrepancies.'
+              : 'Dictate live audio to transcribe and automatically audit against a baseline standard.'}
           </p>
         </div>
 
-        <div className={`panel ${fadeClass(200)}`} style={{ padding: '24px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-            
-            {/* Clause A */}
-            <div>
-              <div className="input-label">
-                <span>Current Clause</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  {isListening && <span style={{ color: '#DC2626', fontSize: '11px', fontWeight: 'bold', animation: 'pulse 1.5s infinite' }}>Listening...</span>}
+        {view === 'text' ? (
+          <div className={`panel ${fadeClass(200)}`} style={{ padding: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+              <div>
+                <div className="input-label">
+                  <span>Current Draft</span>
                   {clauseA && <button className="clear-btn" onClick={() => setClauseA('')}>Clear</button>}
                 </div>
+                <textarea
+                  className="scrut-textarea"
+                  placeholder="Enter the active clause under review..."
+                  value={clauseA}
+                  onChange={(e) => setClauseA(e.target.value)}
+                />
               </div>
-              <textarea
-                className="scrut-textarea"
-                placeholder="Enter the active clause under review or dictate live audio..."
-                value={clauseA}
-                onChange={(e) => setClauseA(e.target.value)}
-              />
-            </div>
 
-            {/* Clause B */}
-            <div>
-              <div className="input-label">
-                <span>Historical Context</span>
-                {clauseB && <button className="clear-btn" onClick={() => setClauseB('')}>Clear</button>}
+              <div>
+                <div className="input-label">
+                  <span>Historical Standard</span>
+                  {clauseB && <button className="clear-btn" onClick={() => setClauseB('')}>Clear</button>}
+                </div>
+                <textarea
+                  className="scrut-textarea"
+                  placeholder="Enter the reference clause or baseline standard..."
+                  value={clauseB}
+                  onChange={(e) => setClauseB(e.target.value)}
+                />
               </div>
-              <textarea
-                className="scrut-textarea"
-                placeholder="Enter the reference clause or baseline standard..."
-                value={clauseB}
-                onChange={(e) => setClauseB(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', gap: '16px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Load template:</span>
-              <button className="demo-btn" onClick={() => {
-                const pair = DEMOS.contradiction[Math.floor(Math.random() * DEMOS.contradiction.length)];
-                setClauseA(pair.a); setClauseB(pair.b); setResult(null); setError(false);
-              }}>Contradiction</button>
-              <button className="demo-btn" onClick={() => {
-                const pair = DEMOS.clear[Math.floor(Math.random() * DEMOS.clear.length)];
-                setClauseA(pair.a); setClauseB(pair.b); setResult(null); setError(false);
-              }}>Standard</button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              
-              <button 
-                className={`dictate-btn ${isListening ? 'listening' : ''}`}
-                onClick={toggleDictation}
-                title="Dictate live audio to transcribe and automatically audit"
-              >
-                {isListening ? <><Square size={14} fill="currentColor" /> Stop Dictation</> : <><Mic size={16} /> Live Dictation</>}
-              </button>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', gap: '16px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Load template:</span>
+                <button className="demo-btn" onClick={() => {
+                  const pair = DEMOS.contradiction[Math.floor(Math.random() * DEMOS.contradiction.length)];
+                  setClauseA(pair.a); setClauseB(pair.b); setResult(null); setError(false);
+                }}>Contradiction</button>
+                <button className="demo-btn" onClick={() => {
+                  const pair = DEMOS.clear[Math.floor(Math.random() * DEMOS.clear.length)];
+                  setClauseA(pair.a); setClauseB(pair.b); setResult(null); setError(false);
+                }}>Standard</button>
+              </div>
 
-              <button 
-                className="primary-btn" 
-                disabled={!canRun || isLoading || isListening}
-                onClick={runAnalysis}
-              >
+              <button className="primary-btn" disabled={!canRun || isLoading} onClick={runAnalysis}>
                 {isLoading ? <><Loader size={16} className="spin" /> Auditing...</> : <>Run Audit <ArrowRight size={16} /></>}
               </button>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className={`panel ${fadeClass(200)}`} style={{ padding: '32px' }}>
+            <div style={{ marginBottom: '32px' }}>
+              <div className="input-label">
+                <span>Historical Standard (Baseline)</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="demo-btn" onClick={() => setClauseB(DEMOS.contradiction[0].b)}>Load Template 1</button>
+                  <button className="demo-btn" onClick={() => setClauseB(DEMOS.contradiction[1].b)}>Load Template 2</button>
+                </div>
+              </div>
+              <textarea
+                className="scrut-textarea"
+                style={{ minHeight: '120px' }}
+                placeholder="Paste the standard playbook clause here..."
+                value={clauseB}
+                onChange={(e) => setClauseB(e.target.value)}
+              />
+            </div>
+
+            <div className={`dictation-zone ${isListening ? 'listening' : ''}`}>
+              <button className={`massive-mic-btn ${isListening ? 'pulse' : ''}`} onClick={toggleDictation}>
+                {isListening ? <Square size={32} fill="currentColor" /> : <Mic size={32} />}
+              </button>
+              
+              <h3 style={{ marginTop: '24px', fontSize: '18px', fontWeight: 600, color: isListening ? '#DC2626' : 'var(--text-main)' }}>
+                {isListening ? 'Listening to Live Audio...' : 'Click to dictate the opposing clause'}
+              </h3>
+              
+              {(clauseA || isListening) && (
+                <div className="live-transcript-box">
+                  {clauseA || <span style={{ color: 'var(--text-light)', fontStyle: 'italic' }}>Waiting for speech...</span>}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+              <button className="primary-btn" disabled={!canRun || isLoading || isListening} onClick={runAnalysis}>
+                {isLoading ? <><Loader size={16} className="spin" /> Auditing...</> : <>Run Audit <ArrowRight size={16} /></>}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div ref={resultRef} />
 
@@ -630,7 +585,7 @@ export default function ScrutAuditor() {
 
               <div className="comparison-table">
                 <div className="table-col">
-                  <div className="table-head">Current Draft</div>
+                  <div className="table-head">Current Draft (Live Audio)</div>
                   <div className="table-cell">
                     <p className="clause-text">{result.current_statement}</p>
                   </div>
