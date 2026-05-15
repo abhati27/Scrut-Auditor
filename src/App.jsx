@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Shield, AlertTriangle, CheckCircle, Loader, ArrowRight, Cpu, FileText, Command } from 'lucide-react';
+import { Shield, AlertTriangle, Loader, ArrowRight, CheckCircle, Cpu, FileText, Command, Mic, MicOff, Square } from 'lucide-react';
 
 const DEMOS = {
   contradiction: [
@@ -60,12 +60,24 @@ export default function ScrutAuditor() {
   const [duration, setDuration] = useState(null);
   const [mounted, setMounted] = useState(false);
 
+  // Audio specific states
+  const [isListening, setIsListening] = useState(false);
+  const [autoRunOnStop, setAutoRunOnStop] = useState(false);
+  const recognitionRef = useRef(null);
   const resultRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
     checkHealth();
   }, []);
+
+  // Effect to auto-run analysis if the dictation has stopped and autoRunOnStop is true
+  useEffect(() => {
+    if (autoRunOnStop && !isListening && clauseA.trim().length > 0 && clauseB.trim().length > 0) {
+      runAnalysis();
+      setAutoRunOnStop(false);
+    }
+  }, [isListening, autoRunOnStop, clauseA, clauseB]);
 
   // Cmd+Enter / Ctrl+Enter to run analysis
   useEffect(() => {
@@ -88,6 +100,58 @@ export default function ScrutAuditor() {
     } catch {
       setModelStatus('offline');
     }
+  };
+
+  const toggleDictation = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      setAutoRunOnStop(true); // Schedule the audit to run automatically once state flushes
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Please use Google Chrome or Safari.");
+      return;
+    }
+
+    // Clear current statement and result to prepare for new dictation
+    setClauseA('');
+    setResult(null);
+    setReason(null);
+    setError(false);
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let finalTranscript = '';
+
+    recognition.onresult = (event) => {
+      let interimTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + ' ';
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+      setClauseA((finalTranscript + interimTranscript).trim());
+    };
+
+    recognition.onerror = (e) => {
+      console.error(e);
+      setIsListening(false);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
+    setIsListening(true);
   };
 
   const runAnalysis = async () => {
@@ -201,6 +265,11 @@ export default function ScrutAuditor() {
           from { transform: rotate(0deg); }
           to   { transform: rotate(360deg); }
         }
+        @keyframes pulse-red {
+          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+          70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
 
         .initially-hidden { opacity: 0; }
         .fade-in-0   { animation: reveal 0.4s ease-out 0ms   both; }
@@ -309,7 +378,29 @@ export default function ScrutAuditor() {
           cursor: not-allowed;
           box-shadow: none;
         }
-        .spin { animation: spin 1s linear infinite; }
+
+        .dictate-btn {
+          background: #fff;
+          border: 1px solid var(--border);
+          color: var(--text-main);
+          font-family: 'Inter', sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          padding: 0 16px;
+          height: 36px;
+          border-radius: 4px;
+          cursor: pointer;
+          display: flex; align-items: center; justify-content: center; gap: 8px;
+          transition: all 0.15s ease;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        .dictate-btn:hover { background: #F9FAFB; border-color: var(--border-focus); }
+        .dictate-btn.listening {
+          background: #FEF2F2;
+          color: #DC2626;
+          border-color: #FCA5A5;
+          animation: pulse-red 2s infinite;
+        }
 
         .kbd-hint {
           display: flex; align-items: center; gap: 4px;
@@ -433,11 +524,14 @@ export default function ScrutAuditor() {
             <div>
               <div className="input-label">
                 <span>Current Clause</span>
-                {clauseA && <button className="clear-btn" onClick={() => setClauseA('')}>Clear</button>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  {isListening && <span style={{ color: '#DC2626', fontSize: '11px', fontWeight: 'bold', animation: 'pulse 1.5s infinite' }}>Listening...</span>}
+                  {clauseA && <button className="clear-btn" onClick={() => setClauseA('')}>Clear</button>}
+                </div>
               </div>
               <textarea
                 className="scrut-textarea"
-                placeholder="Enter the active clause under review..."
+                placeholder="Enter the active clause under review or dictate live audio..."
                 value={clauseA}
                 onChange={(e) => setClauseA(e.target.value)}
               />
@@ -472,16 +566,18 @@ export default function ScrutAuditor() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              {canRun && !isLoading && (
-                <div className="kbd-hint">
-                  <span className="kbd-key">{navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}</span>
-                  <span>+</span>
-                  <span className="kbd-key">Enter</span>
-                </div>
-              )}
+              
+              <button 
+                className={`dictate-btn ${isListening ? 'listening' : ''}`}
+                onClick={toggleDictation}
+                title="Dictate live audio to transcribe and automatically audit"
+              >
+                {isListening ? <><Square size={14} fill="currentColor" /> Stop Dictation</> : <><Mic size={16} /> Live Dictation</>}
+              </button>
+
               <button 
                 className="primary-btn" 
-                disabled={!canRun || isLoading}
+                disabled={!canRun || isLoading || isListening}
                 onClick={runAnalysis}
               >
                 {isLoading ? <><Loader size={16} className="spin" /> Auditing...</> : <>Run Audit <ArrowRight size={16} /></>}
