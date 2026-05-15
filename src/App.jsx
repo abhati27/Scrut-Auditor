@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Shield, AlertTriangle, CheckCircle, Loader, Cpu, Command, Trash2, ArrowRight, FileText } from 'lucide-react';
+import { Shield, AlertTriangle, Loader, ArrowRight } from 'lucide-react';
 
 const DEMOS = {
   contradiction: [
@@ -161,7 +161,7 @@ export default function ScrutAuditor() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
         :root {
-          --bg-base: #FAFAFA;
+          --bg-base: #F3F4F6;
           --bg-panel: #FFFFFF;
           --border: #E5E7EB;
           --border-focus: #D1D5DB;
@@ -170,12 +170,6 @@ export default function ScrutAuditor() {
           --text-light: #9CA3AF;
           --primary: #111827;
           --primary-hover: #374151;
-          --danger-bg: #FEF2F2;
-          --danger-border: #FCA5A5;
-          --danger-text: #991B1B;
-          --success-bg: #F0FDF4;
-          --success-border: #86EFAC;
-          --success-text: #166534;
         }
 
         *, *::before, *::after { box-sizing: border-box; }
@@ -193,8 +187,8 @@ export default function ScrutAuditor() {
         .panel {
           background: var(--bg-panel);
           border: 1px solid var(--border);
-          border-radius: 8px;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+          border-radius: 4px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         h1, h2, h3, h4 { margin: 0; font-weight: 600; }
@@ -225,7 +219,7 @@ export default function ScrutAuditor() {
         .navbar {
           position: fixed;
           top: 0; left: 0; right: 0;
-          height: 64px;
+          height: 56px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -238,26 +232,26 @@ export default function ScrutAuditor() {
         /* Textareas */
         .input-label {
           display: flex; justify-content: space-between; align-items: center;
-          font-size: 13px; font-weight: 500;
-          color: var(--text-main);
+          font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+          color: var(--text-muted);
           margin-bottom: 8px;
         }
         .scrut-textarea {
           width: 100%;
           min-height: 200px;
-          background: var(--bg-base);
+          background: #F9FAFB;
           border: 1px solid var(--border);
-          border-radius: 6px;
+          border-radius: 4px;
           padding: 16px;
-          font-family: 'Inter', sans-serif;
-          font-size: 14px;
+          font-family: 'Times New Roman', Times, serif;
+          font-size: 16px;
           line-height: 1.6;
           color: var(--text-main);
           resize: vertical;
           outline: none;
           transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
-        .scrut-textarea::placeholder { color: var(--text-light); }
+        .scrut-textarea::placeholder { color: var(--text-light); font-family: 'Inter', sans-serif; font-size: 14px; }
         .scrut-textarea:focus {
           border-color: var(--primary);
           box-shadow: 0 0 0 1px var(--primary);
@@ -267,7 +261,7 @@ export default function ScrutAuditor() {
         .clear-btn {
           background: none; border: none; cursor: pointer;
           color: var(--text-muted); transition: color 0.15s;
-          display: flex; align-items: center; gap: 4px; font-size: 12px; font-family: 'Inter';
+          display: flex; align-items: center; gap: 4px; font-size: 12px; font-family: 'Inter'; text-transform: none; letter-spacing: 0;
         }
         .clear-btn:hover { color: var(--text-main); }
 
@@ -277,7 +271,7 @@ export default function ScrutAuditor() {
           border: 1px solid var(--border);
           color: var(--text-main);
           padding: 6px 12px;
-          border-radius: 6px;
+          border-radius: 4px;
           font-family: 'Inter', sans-serif;
           font-size: 13px;
           font-weight: 500;
@@ -287,7 +281,7 @@ export default function ScrutAuditor() {
         }
         .demo-btn:hover {
           border-color: var(--border-focus);
-          background: var(--bg-base);
+          background: #F9FAFB;
         }
 
         .primary-btn {
@@ -295,11 +289,11 @@ export default function ScrutAuditor() {
           border: 1px solid var(--primary);
           color: #fff;
           font-family: 'Inter', sans-serif;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 500;
           padding: 0 24px;
-          height: 40px;
-          border-radius: 6px;
+          height: 36px;
+          border-radius: 4px;
           cursor: pointer;
           display: flex; align-items: center; justify-content: center; gap: 8px;
           transition: background 0.15s ease;
@@ -309,7 +303,7 @@ export default function ScrutAuditor() {
           background: var(--primary-hover);
         }
         .primary-btn:disabled {
-          background: var(--bg-base);
+          background: #F3F4F6;
           border-color: var(--border);
           color: var(--text-light);
           cursor: not-allowed;
@@ -322,38 +316,46 @@ export default function ScrutAuditor() {
           font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-muted);
         }
         .kbd-key {
-          background: var(--bg-base); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border);
+          background: #F9FAFB; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border);
           font-family: 'JetBrains Mono', monospace; font-size: 11px;
         }
 
-        /* Result Card */
-        .result-card {
-          margin-top: 32px;
-          padding: 24px;
-          border-radius: 8px;
+        /* Report Container */
+        .report-container {
+          margin-top: 40px;
+          background: #fff;
           border: 1px solid var(--border);
-        }
-        .result-card.contradiction {
-          background: var(--danger-bg);
-          border-color: var(--danger-border);
-        }
-        .result-card.clear {
-          background: var(--success-bg);
-          border-color: var(--success-border);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+          border-radius: 4px;
         }
 
-        .result-title {
-          font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+        .report-header {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 16px 24px;
+          border-bottom: 1px solid var(--border);
+          background: #F9FAFB;
+          border-radius: 4px 4px 0 0;
         }
-        .contradiction .result-title { color: var(--danger-text); }
-        .clear .result-title { color: var(--success-text); }
+        .report-title {
+          font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-main); margin: 0;
+        }
+        .status-pill {
+          font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .status-pill.fail { background: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; }
+        .status-pill.pass { background: #F0FDF4; color: #166534; border: 1px solid #86EFAC; }
 
-        .result-reason {
-          font-size: 15px; line-height: 1.6;
-          margin-bottom: 24px;
+        .report-body { padding: 32px 24px; }
+
+        .finding-section {
+          margin-bottom: 32px;
         }
-        .contradiction .result-reason { color: var(--danger-text); }
-        .clear .result-reason { color: var(--success-text); }
+        .finding-label {
+          font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: block;
+        }
+        .finding-text {
+          font-size: 15px; color: var(--text-main); line-height: 1.6; margin: 0;
+        }
 
         .reason-loading {
           opacity: 0.7;
@@ -364,47 +366,62 @@ export default function ScrutAuditor() {
           50% { opacity: 1; }
         }
 
-        .diff-view { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .diff-box {
-          background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 16px;
+        .comparison-table {
+          display: flex;
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          overflow: hidden;
         }
-        .diff-label { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 8px; display: block; }
-        .diff-content { font-size: 14px; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; font-family: 'Inter'; margin: 0; }
+        .table-col { flex: 1; border-right: 1px solid var(--border); background: #fff; width: 50%; }
+        .table-col:last-child { border-right: none; }
         
-        .metadata-bar {
-          display: flex; align-items: center; gap: 24px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);
-          font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted);
+        .table-head {
+          background: #F9FAFB; padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+          border-bottom: 1px solid var(--border);
         }
-        .contradiction .metadata-bar { border-top-color: var(--danger-border); color: var(--danger-text); opacity: 0.8; }
-        .clear .metadata-bar { border-top-color: var(--success-border); color: var(--success-text); opacity: 0.8; }
+        .table-cell {
+          padding: 16px;
+        }
+        .clause-text {
+          font-family: 'Times New Roman', Times, serif; font-size: 16px; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; margin: 0;
+        }
+
+        .report-footer {
+          display: flex; gap: 24px; padding: 12px 24px; background: #F9FAFB; border-top: 1px solid var(--border); border-radius: 0 0 4px 4px;
+        }
+        .meta-item {
+          font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); text-transform: uppercase;
+        }
 
         @media (max-width: 900px) {
-          .diff-view { grid-template-columns: 1fr; }
+          .comparison-table { flex-direction: column; }
+          .table-col { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+          .table-col:last-child { border-bottom: none; }
           .main-content { padding: 80px 20px 60px; }
         }
       `}</style>
 
       <nav className={`navbar ${fadeClass(0)}`}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Shield size={20} color="var(--primary)" />
-          <h1 style={{ fontSize: '16px', fontWeight: 600, color: var(--text-main) }}>ScrutAuditor</h1>
-          <span style={{ color: var(--border), margin: '0 8px' }}>|</span>
-          <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Contract Analysis</span>
+          <Shield size={18} color="var(--primary)" />
+          <h1 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-main)' }}>ScrutAuditor</h1>
+          <span style={{ color: 'var(--border)', margin: '0 8px' }}>|</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Contract Analysis</span>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div className={`status-dot ${modelStatus}`} />
-          <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>{statusText}</span>
+          <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }}>{statusText}</span>
         </div>
       </nav>
 
-      <main className="main-content" style={{ maxWidth: '1000px', margin: '0 auto', padding: '100px 32px 80px' }}>
+      <main className="main-content" style={{ maxWidth: '1000px', margin: '0 auto', padding: '90px 32px 80px' }}>
         
-        <div className={fadeClass(100)} style={{ marginBottom: '40px' }}>
-          <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>
-            Contract Auditor
+        <div className={fadeClass(100)} style={{ marginBottom: '32px' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>
+            Audit Request
           </h2>
-          <p style={{ fontSize: '16px', color: 'var(--text-muted)', margin: 0 }}>
+          <p style={{ fontSize: '15px', color: 'var(--text-muted)', margin: 0 }}>
             Compare active clauses against historical standards to identify material discrepancies.
           </p>
         </div>
@@ -467,7 +484,7 @@ export default function ScrutAuditor() {
                 disabled={!canRun || isLoading}
                 onClick={runAnalysis}
               >
-                {isLoading ? <><Loader size={16} className="spin" /> Analyzing...</> : <>Run Audit <ArrowRight size={16} /></>}
+                {isLoading ? <><Loader size={16} className="spin" /> Auditing...</> : <>Run Audit <ArrowRight size={16} /></>}
               </button>
             </div>
           </div>
@@ -476,47 +493,65 @@ export default function ScrutAuditor() {
         <div ref={resultRef} />
 
         {error && (
-          <div className="fade-in-0 result-card contradiction" style={{ marginTop: '32px' }}>
-            <div className="result-title">
-              <AlertTriangle size={20} /> Connection Error
+          <div className="fade-in-0 report-container" style={{ marginTop: '32px' }}>
+            <div className="report-header">
+               <h3 className="report-title">Audit Report</h3>
+               <div className="status-pill fail">Error</div>
             </div>
-            <div className="result-reason">
-              Failed to reach the inference engine. Please ensure the model is online.
+            <div className="report-body">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#991B1B' }}>
+                <AlertTriangle size={20} />
+                <span style={{ fontSize: '15px', fontWeight: 500 }}>Failed to reach the inference engine. Please ensure the model is online.</span>
+              </div>
             </div>
           </div>
         )}
 
         {result && (
-          <div className={`result-card fade-in-0 ${result.contradiction_found ? 'contradiction' : 'clear'}`}>
-            <div className="result-title">
-              {result.contradiction_found ? <><AlertTriangle size={20} /> Material Discrepancy Found</> : <><CheckCircle size={20} /> Clauses Aligned</>}
-            </div>
-
-            <div className="result-reason">
-              {reasonLoading ? (
-                <span className="reason-loading">Generating rationale...</span>
-              ) : reason ? (
-                reason
-              ) : (
-                result.contradiction_found ? 'A direct conflict exists between the obligations in these clauses.' : 'No direct conflict in obligations was found.'
-              )}
-            </div>
-
-            <div className="diff-view">
-              <div className="diff-box">
-                <span className="diff-label">Current Statement</span>
-                <div className="diff-content">{result.current_statement}</div>
-              </div>
-              <div className="diff-box">
-                <span className="diff-label">Historical Statement</span>
-                <div className="diff-content">{result.historical_statement}</div>
+          <div className="report-container fade-in-0">
+            <div className="report-header">
+              <h3 className="report-title">Audit Report</h3>
+              <div className={`status-pill ${result.contradiction_found ? 'fail' : 'pass'}`}>
+                {result.contradiction_found ? 'Requires Review' : 'Approved'}
               </div>
             </div>
 
-            <div className="metadata-bar">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Cpu size={14} /> SCRUT-AUDITOR:LATEST</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FileText size={14} /> ON-PREMISE</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Command size={14} /> {duration}ms</div>
+            <div className="report-body">
+              <div className="finding-section">
+                <span className="finding-label">Finding</span>
+                <p className="finding-text">
+                  {reasonLoading ? (
+                    <span className="reason-loading">Analyzing clause variations...</span>
+                  ) : reason ? (
+                    reason
+                  ) : (
+                    result.contradiction_found 
+                      ? 'A material conflict exists between the proposed and historical clauses.' 
+                      : 'No material conflict identified between the clauses.'
+                  )}
+                </p>
+              </div>
+
+              <div className="comparison-table">
+                <div className="table-col">
+                  <div className="table-head">Current Draft</div>
+                  <div className="table-cell">
+                    <p className="clause-text">{result.current_statement}</p>
+                  </div>
+                </div>
+                <div className="table-col">
+                  <div className="table-head">Historical Standard</div>
+                  <div className="table-cell">
+                    <p className="clause-text">{result.historical_statement}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="report-footer">
+              <div className="meta-item">Model: Scrut-Auditor (8B)</div>
+              <div className="meta-item">Environment: On-Premise</div>
+              <div className="meta-item">Latency: {duration}ms</div>
             </div>
           </div>
         )}
