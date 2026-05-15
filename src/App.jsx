@@ -50,24 +50,27 @@ export default function ScrutAuditor() {
 
   // Effect to auto-run analysis if the dictation has stopped and autoRunOnStop is true
   useEffect(() => {
-    if (autoRunOnStop && !isListening && clauseA.trim().length > 0 && clauseB.trim().length > 0) {
-      runAnalysis();
+    if (autoRunOnStop && !isListening) {
+      if (view === 'audio' && clauseA.trim().length > 0) {
+        runAnalysis();
+      } else if (view === 'text' && clauseA.trim().length > 0 && clauseB.trim().length > 0) {
+        runAnalysis();
+      }
       setAutoRunOnStop(false);
     }
-  }, [isListening, autoRunOnStop, clauseA, clauseB]);
+  }, [isListening, autoRunOnStop, clauseA, clauseB, view]);
 
   // Cmd+Enter / Ctrl+Enter to run analysis
   useEffect(() => {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        if (clauseA.trim() && clauseB.trim() && !isLoading) {
-          runAnalysis();
-        }
+        if (view === 'text' && clauseA.trim() && clauseB.trim() && !isLoading) runAnalysis();
+        if (view === 'audio' && clauseA.trim() && !isLoading) runAnalysis();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [clauseA, clauseB, isLoading]);
+  }, [clauseA, clauseB, isLoading, view]);
 
   const checkHealth = async () => {
     try {
@@ -131,19 +134,35 @@ export default function ScrutAuditor() {
   };
 
   const runAnalysis = async () => {
-    if (!clauseA.trim() || !clauseB.trim()) return;
+    if (view === 'text' && (!clauseA.trim() || !clauseB.trim())) return;
+    if (view === 'audio' && !clauseA.trim()) return;
+
     setIsLoading(true);
     setError(false);
     setResult(null);
     setReason(null);
-    const userContent = `Current statement: ${clauseA}. Historical statement: ${clauseB}.`;
+
+    let userContent = '';
+    let systemContent = '';
+
+    if (view === 'text') {
+      userContent = `Current statement: ${clauseA}. Historical statement: ${clauseB}.`;
+    } else {
+      userContent = `Conversation Transcript: ${clauseA}`;
+      systemContent = `You are a silent auditor. Analyze the following conversation transcript. Identify if any two statements made in the conversation contradict each other. Output ONLY valid JSON with the following keys: "contradiction_found" (boolean), "current_statement" (the first contradictory statement), and "historical_statement" (the statement it contradicts). Do not include markdown formatting or conversational text.`;
+    }
+
+    const messages = [];
+    if (systemContent) messages.push({ role: 'system', content: systemContent });
+    messages.push({ role: 'user', content: userContent });
+
     try {
       const res = await fetch('https://abhati27-law-auditor-api.hf.space/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'scrut-auditor:latest',
-          messages: [{ role: 'user', content: userContent }],
+          messages: messages,
           stream: false,
         }),
       });
@@ -158,16 +177,18 @@ export default function ScrutAuditor() {
 
       setReasonLoading(true);
       try {
+        const messagesReason = [];
+        if (systemContent) messagesReason.push({ role: 'system', content: systemContent });
+        messagesReason.push({ role: 'user', content: userContent });
+        messagesReason.push({ role: 'assistant', content: raw });
+        messagesReason.push({ role: 'user', content: 'In one concise sentence, explain specifically why.' });
+
         const res2 = await fetch('https://abhati27-law-auditor-api.hf.space/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'scrut-auditor:latest',
-            messages: [
-              { role: 'user', content: userContent },
-              { role: 'assistant', content: raw },
-              { role: 'user', content: 'In one concise sentence, explain specifically why.' },
-            ],
+            messages: messagesReason,
             stream: false,
           }),
         });
@@ -188,7 +209,7 @@ export default function ScrutAuditor() {
     }
   };
 
-  const canRun = clauseA.trim().length > 0 && clauseB.trim().length > 0;
+  const canRun = view === 'text' ? clauseA.trim().length > 0 && clauseB.trim().length > 0 : clauseA.trim().length > 0;
   const statusText =
     modelStatus === 'active' ? 'System Online' : modelStatus === 'offline' ? 'System Offline' : 'Connecting...';
 
@@ -382,7 +403,7 @@ export default function ScrutAuditor() {
           margin-top: 32px; width: 100%; max-width: 800px;
           background: #fff; padding: 24px; border-radius: 8px; border: 1px solid var(--border);
           font-size: 18px; line-height: 1.6; font-family: 'Times New Roman', Times, serif; color: var(--text-main);
-          min-height: 100px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          min-height: 200px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         /* Report Container */
@@ -422,10 +443,10 @@ export default function ScrutAuditor() {
           </div>
           
           <div className="tab-container">
-            <button onClick={() => setView('text')} className={`tab-btn ${view === 'text' ? 'active' : ''}`}>
+            <button onClick={() => { setView('text'); setResult(null); }} className={`tab-btn ${view === 'text' ? 'active' : ''}`}>
               <Type size={14} /> Document Audit
             </button>
-            <button onClick={() => setView('audio')} className={`tab-btn ${view === 'audio' ? 'active' : ''}`}>
+            <button onClick={() => { setView('audio'); setResult(null); setClauseA(''); setClauseB(''); }} className={`tab-btn ${view === 'audio' ? 'active' : ''}`}>
               <Radio size={14} /> Live Audio Audit
             </button>
           </div>
@@ -446,7 +467,7 @@ export default function ScrutAuditor() {
           <p style={{ fontSize: '15px', color: 'var(--text-muted)', margin: 0 }}>
             {view === 'text' 
               ? 'Compare written clauses against historical standards to identify material discrepancies.'
-              : 'Dictate live audio to transcribe and automatically audit against a baseline standard.'}
+              : 'Record a live conversation. The AI will analyze the entire transcript to find internal contradictions.'}
           </p>
         </div>
 
@@ -499,43 +520,24 @@ export default function ScrutAuditor() {
             </div>
           </div>
         ) : (
-          <div className={`panel ${fadeClass(200)}`} style={{ padding: '32px' }}>
-            <div style={{ marginBottom: '32px' }}>
-              <div className="input-label">
-                <span>Historical Standard (Baseline)</span>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="demo-btn" onClick={() => setClauseB(DEMOS.contradiction[0].b)}>Load Template 1</button>
-                  <button className="demo-btn" onClick={() => setClauseB(DEMOS.contradiction[1].b)}>Load Template 2</button>
-                </div>
-              </div>
-              <textarea
-                className="scrut-textarea"
-                style={{ minHeight: '120px' }}
-                placeholder="Paste the standard playbook clause here..."
-                value={clauseB}
-                onChange={(e) => setClauseB(e.target.value)}
-              />
-            </div>
-
+          <div className={`panel ${fadeClass(200)}`} style={{ padding: '48px 32px' }}>
             <div className={`dictation-zone ${isListening ? 'listening' : ''}`}>
               <button className={`massive-mic-btn ${isListening ? 'pulse' : ''}`} onClick={toggleDictation}>
                 {isListening ? <Square size={32} fill="currentColor" /> : <Mic size={32} />}
               </button>
               
               <h3 style={{ marginTop: '24px', fontSize: '18px', fontWeight: 600, color: isListening ? '#DC2626' : 'var(--text-main)' }}>
-                {isListening ? 'Listening to Live Audio...' : 'Click to dictate the opposing clause'}
+                {isListening ? 'Listening to conversation...' : 'Click to start recording the conversation'}
               </h3>
               
-              {(clauseA || isListening) && (
-                <div className="live-transcript-box">
-                  {clauseA || <span style={{ color: 'var(--text-light)', fontStyle: 'italic' }}>Waiting for speech...</span>}
-                </div>
-              )}
+              <div className="live-transcript-box">
+                {clauseA || <span style={{ color: 'var(--text-light)', fontStyle: 'italic' }}>Waiting for speech...</span>}
+              </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '32px' }}>
               <button className="primary-btn" disabled={!canRun || isLoading || isListening} onClick={runAnalysis}>
-                {isLoading ? <><Loader size={16} className="spin" /> Auditing...</> : <>Run Audit <ArrowRight size={16} /></>}
+                {isLoading ? <><Loader size={16} className="spin" /> Analyzing Conversation...</> : <>Find Contradictions <ArrowRight size={16} /></>}
               </button>
             </div>
           </div>
@@ -577,21 +579,21 @@ export default function ScrutAuditor() {
                     reason
                   ) : (
                     result.contradiction_found 
-                      ? 'A material conflict exists between the proposed and historical clauses.' 
-                      : 'No material conflict identified between the clauses.'
+                      ? 'A material conflict exists in the conversation.' 
+                      : 'No material conflict identified in the transcript.'
                   )}
                 </p>
               </div>
 
               <div className="comparison-table">
                 <div className="table-col">
-                  <div className="table-head">Current Draft (Live Audio)</div>
+                  <div className="table-head">{view === 'text' ? 'Current Draft' : 'Statement 1'}</div>
                   <div className="table-cell">
                     <p className="clause-text">{result.current_statement}</p>
                   </div>
                 </div>
                 <div className="table-col">
-                  <div className="table-head">Historical Standard</div>
+                  <div className="table-head">{view === 'text' ? 'Historical Standard' : 'Contradicting Statement 2'}</div>
                   <div className="table-cell">
                     <p className="clause-text">{result.historical_statement}</p>
                   </div>
