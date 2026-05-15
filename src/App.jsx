@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Shield, AlertTriangle, CheckCircle, Loader, Minus } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Loader, Cpu, Command, Trash2 } from 'lucide-react';
 
 const DEMOS = {
   contradiction: [
@@ -23,26 +23,6 @@ const DEMOS = {
       a: 'All data submitted to the platform and outputs derived therefrom shall become the exclusive property of the service provider and may be used for platform improvement.',
       b: 'All client data and derived outputs remain the exclusive property of the client. The service provider acquires no ownership rights and shall not use client data for any purpose beyond direct service delivery.',
     },
-    {
-      a: 'This agreement shall automatically renew for successive one-year terms unless either party provides sixty days written notice of non-renewal prior to expiration.',
-      b: 'This agreement shall expire at the end of its initial term and shall not renew automatically. Any renewal requires the parties to execute a new written agreement.',
-    },
-    {
-      a: 'Upon termination the employee shall not work for any direct competitor or start a competing business within the defined territory for two years.',
-      b: 'Upon termination the employee is entirely free to work for any employer including direct competitors and to start any business, with no geographic or time restriction.',
-    },
-    {
-      a: 'No late fees, penalties, or interest charges shall be assessed on any overdue balances under any circumstances whatsoever.',
-      b: 'All amounts unpaid after the due date shall accrue a late payment charge of two percent per month on the outstanding balance until paid in full.',
-    },
-    {
-      a: 'All fees paid under this agreement are non-refundable and no refund shall be issued upon cancellation or termination for any reason.',
-      b: 'Client is entitled to a full refund of all prepaid fees upon termination of this agreement, payable within thirty days of the termination date.',
-    },
-    {
-      a: 'Contractor shall not subcontract any portion of the work without prior written approval from Client.',
-      b: 'Contractor may subcontract any portion of the work to qualified third parties without requiring Client consent.',
-    },
   ],
   clear: [
     {
@@ -64,26 +44,6 @@ const DEMOS = {
     {
       a: 'All notices under this agreement shall be in writing and delivered by certified mail or overnight courier to the address specified in Schedule A.',
       b: 'Any notice required under this contract must be written and sent via certified post or recognized overnight delivery service to the addresses set forth in Schedule A.',
-    },
-    {
-      a: 'Each party shall indemnify and hold harmless the other from any third-party claims arising from its own negligence or willful misconduct.',
-      b: 'Both parties agree to defend and indemnify one another against any losses, claims, or liabilities caused by that party\'s negligent acts or intentional wrongdoing.',
-    },
-    {
-      a: 'This agreement constitutes the entire agreement between the parties with respect to its subject matter and supersedes all prior negotiations, representations, and understandings.',
-      b: 'This contract represents the complete and final agreement of the parties on the matters addressed herein, replacing any prior discussions, drafts, or representations whether written or oral.',
-    },
-    {
-      a: 'If any provision of this agreement is held to be invalid or unenforceable, the remaining provisions shall continue in full force and effect.',
-      b: 'Should any clause of this contract be found void or unenforceable by a court of competent jurisdiction, the rest of the agreement shall remain valid and binding on the parties.',
-    },
-    {
-      a: 'The receiving party shall hold all confidential information in strict confidence for three years following the date of disclosure.',
-      b: 'Confidential information exchanged under this agreement shall be protected from unauthorized disclosure for a period of three years from the date it was shared.',
-    },
-    {
-      a: 'The contractor shall maintain commercial general liability insurance with a minimum of two million dollars per occurrence throughout the contract term.',
-      b: 'Contractor must carry general liability insurance of no less than two million dollars per occurrence for the full duration of this agreement.',
     },
   ],
 };
@@ -200,736 +160,437 @@ export default function ScrutAuditor() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const padCount = (n) => String(n).padStart(3, '0');
   const canRun = clauseA.trim().length > 0 && clauseB.trim().length > 0;
   const statusText =
-    modelStatus === 'active' ? 'INFERENCE ACTIVE' : modelStatus === 'offline' ? 'OFFLINE' : 'CHECKING';
+    modelStatus === 'active' ? 'MODEL ONLINE' : modelStatus === 'offline' ? 'MODEL OFFLINE' : 'CONNECTING...';
 
   const fadeClass = (delay) => (mounted ? `fade-in-${delay}` : 'initially-hidden');
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
         :root {
-          --ink:        #0e0e0e;
-          --ink-light:  #1a1a1a;
-          --ink-mid:    #2a2a2a;
-          --rule:       #2e2e2e;
-          --rule-light: #3d3d3d;
-          --fog:        #5c5c5c;
-          --mist:       #888888;
-          --paper:      #b8b8b8;
-          --offwhite:   #d6d6d6;
-          --white:      #efefef;
-          --amber:      #c8922a;
-          --amber-mute: #7a5518;
-          --amber-dim:  #1a1208;
-          --green:      #3d9e5f;
-          --green-mute: #245c38;
-          --green-dim:  #0a1f12;
-          --red:        #c0392b;
-          --red-dim:    #1c0a09;
+          --bg-base: #050505;
+          --bg-panel: rgba(20, 20, 22, 0.7);
+          --border: rgba(255, 255, 255, 0.1);
+          --border-glow: rgba(255, 255, 255, 0.2);
+          --text-main: #f8f8f8;
+          --text-muted: #a1a1aa;
+          --accent: #3b82f6;
+          --accent-glow: rgba(59, 130, 246, 0.5);
+          --danger: #ef4444;
+          --danger-glow: rgba(239, 68, 68, 0.2);
+          --success: #10b981;
+          --success-glow: rgba(16, 185, 129, 0.2);
+          --gradient-blue: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
         }
 
         *, *::before, *::after { box-sizing: border-box; }
 
         body {
           margin: 0;
-          background-color: var(--ink);
-          color: var(--white);
+          background-color: var(--bg-base);
+          color: var(--text-main);
+          font-family: 'Outfit', sans-serif;
           min-height: 100vh;
+          overflow-x: hidden;
         }
 
+        /* Abstract glowing orbs in background */
         body::before {
           content: '';
           position: fixed;
-          inset: 0;
+          top: -20%; left: -10%;
+          width: 50vw; height: 50vw;
+          background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%);
+          border-radius: 50%;
+          z-index: -1;
           pointer-events: none;
-          z-index: 9999;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-          opacity: 0.03;
+        }
+        body::after {
+          content: '';
+          position: fixed;
+          bottom: -20%; right: -10%;
+          width: 60vw; height: 60vw;
+          background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, rgba(0,0,0,0) 70%);
+          border-radius: 50%;
+          z-index: -1;
+          pointer-events: none;
         }
 
-        #root { all: unset; display: block; }
+        .glass-panel {
+          background: var(--bg-panel);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+          transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .glass-panel:hover {
+          border-color: var(--border-glow);
+        }
 
-        @keyframes breathe {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50%       { opacity: 0.5; transform: scale(0.85); }
+        h1, h2, h3, h4 { margin: 0; font-weight: 600; }
+
+        @keyframes reveal {
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse-status {
+          0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+          50%      { opacity: 0.8; transform: scale(0.95); box-shadow: 0 0 10px 4px rgba(16, 185, 129, 0); }
         }
         @keyframes spin {
           from { transform: rotate(0deg); }
           to   { transform: rotate(360deg); }
         }
-        @keyframes reveal {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
+        @keyframes sweep {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 200% 50%; }
         }
 
         .initially-hidden { opacity: 0; }
-        .fade-in-0   { animation: reveal 300ms ease-out 0ms   both; }
-        .fade-in-60  { animation: reveal 300ms ease-out 60ms  both; }
-        .fade-in-120 { animation: reveal 300ms ease-out 120ms both; }
-        .fade-in-180 { animation: reveal 300ms ease-out 180ms both; }
-        .fade-in-240 { animation: reveal 300ms ease-out 240ms both; }
+        .fade-in-0   { animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0ms   both; }
+        .fade-in-100 { animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) 100ms both; }
+        .fade-in-200 { animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) 200ms both; }
+        .fade-in-300 { animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) 300ms both; }
 
-        .breathe { animation: breathe 3s ease-in-out infinite; }
-        .spin     { animation: spin 1s linear infinite; }
-        .reveal   { animation: reveal 300ms ease-out forwards; }
+        .status-dot {
+          width: 8px; height: 8px;
+          border-radius: 50%;
+        }
+        .status-dot.active {
+          background-color: var(--success);
+          animation: pulse-status 2s infinite;
+        }
+        .status-dot.offline {
+          background-color: var(--danger);
+        }
+        .status-dot.checking {
+          background-color: var(--text-muted);
+        }
 
-        /* Textarea */
+        /* Nav */
+        .navbar {
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          height: 70px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 5%;
+          background: rgba(5, 5, 5, 0.5);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-bottom: 1px solid var(--border);
+          z-index: 1000;
+        }
+
+        /* Textareas */
+        .input-label {
+          display: flex; justify-content: space-between; align-items: center;
+          font-size: 13px; font-weight: 500; letter-spacing: 0.1em;
+          color: var(--text-muted); text-transform: uppercase;
+          margin-bottom: 12px;
+        }
         .scrut-textarea {
-          font-family: 'IBM Plex Mono', monospace;
-          font-size: 13px;
-          line-height: 2.0;
-          color: var(--offwhite);
-          background: var(--ink-light);
-          border: 1px solid var(--rule);
-          border-radius: 0;
-          padding: 16px;
-          min-height: 200px;
           width: 100%;
+          min-height: 220px;
+          background: rgba(0, 0, 0, 0.2);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 20px;
+          font-family: 'Outfit', sans-serif;
+          font-size: 16px;
+          line-height: 1.6;
+          color: var(--text-main);
           resize: vertical;
           outline: none;
-          transition: border-color 120ms ease;
-          display: block;
+          transition: all 0.3s ease;
         }
-        .scrut-textarea::placeholder { color: var(--fog); }
-        .textarea-a { caret-color: var(--amber); }
-        .textarea-b { caret-color: var(--offwhite); }
-        .textarea-a:focus { border-color: var(--amber-mute); }
-        .textarea-b:focus { border-color: var(--rule-light); }
+        .scrut-textarea::placeholder { color: rgba(255, 255, 255, 0.2); }
+        .scrut-textarea:focus {
+          border-color: var(--accent);
+          background: rgba(59, 130, 246, 0.03);
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
 
-        /* Clear button */
         .clear-btn {
-          background: none;
-          border: none;
-          padding: 0 0 0 8px;
-          cursor: pointer;
-          font-family: 'IBM Plex Mono', monospace;
-          font-size: 11px;
-          color: var(--fog);
-          line-height: 1;
-          transition: color 120ms ease;
-          flex-shrink: 0;
+          background: none; border: none; cursor: pointer;
+          color: var(--text-muted); transition: color 0.2s;
+          display: flex; align-items: center; gap: 4px; font-size: 12px; font-family: 'Outfit';
         }
-        .clear-btn:hover { color: var(--offwhite); }
+        .clear-btn:hover { color: var(--danger); }
 
-        /* Demo options */
-        .demo-group {
-          display: flex;
-          align-items: center;
-          gap: 0;
-          flex-wrap: wrap;
-          row-gap: 4px;
-        }
-        .demo-prefix {
-          font-family: 'IBM Plex Sans', sans-serif;
-          font-size: 11px;
-          letter-spacing: 0.1em;
-          color: var(--fog);
-          text-transform: uppercase;
-          margin-right: 12px;
-          flex-shrink: 0;
-        }
+        /* Buttons */
         .demo-btn {
-          font-family: 'IBM Plex Sans', sans-serif;
-          font-size: 12px;
-          color: var(--mist);
-          background: none;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid var(--border);
+          color: var(--text-muted);
+          padding: 8px 16px;
+          border-radius: 30px;
+          font-family: 'Outfit', sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .demo-btn:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: var(--text-main);
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .primary-btn {
+          background: var(--gradient-blue);
           border: none;
-          border-bottom: 1px solid var(--rule);
-          padding: 0 0 1px 0;
-          cursor: pointer;
-          transition: color 120ms ease, border-color 120ms ease;
-          margin-right: 16px;
-        }
-        .demo-btn:last-child { margin-right: 0; }
-        .demo-btn:hover { color: var(--offwhite); border-color: var(--mist); }
-        .demo-btn.contradiction-btn:hover { color: var(--amber); border-color: var(--amber-mute); }
-        .demo-btn.clear-btn-demo:hover { color: var(--green); border-color: var(--green-mute); }
-
-        /* Keyboard hint */
-        .kbd-hint {
-          font-family: 'IBM Plex Mono', monospace;
-          font-size: 10px;
-          color: var(--fog);
-          letter-spacing: 0.05em;
-          border: 1px solid var(--rule);
-          padding: 1px 5px;
-          border-radius: 0;
-        }
-
-        /* Run button */
-        .run-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          width: 200px;
-          height: 40px;
-          background: transparent;
-          border: 1px solid var(--amber);
-          border-radius: 0;
-          font-family: 'IBM Plex Sans', sans-serif;
-          font-size: 11px;
-          letter-spacing: 0.25em;
+          color: #fff;
+          font-family: 'Outfit', sans-serif;
+          font-size: 15px;
           font-weight: 600;
-          color: var(--amber);
-          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          padding: 0 32px;
+          height: 54px;
+          border-radius: 12px;
           cursor: pointer;
-          transition: background 120ms ease, color 120ms ease;
+          display: flex; align-items: center; justify-content: center; gap: 10px;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+          box-shadow: 0 4px 20px var(--accent-glow);
         }
-        .run-btn:hover:not(:disabled):not(.loading) {
-          background: var(--amber);
-          color: var(--ink);
+        .primary-btn::before {
+          content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+          transform: translateX(-100%);
+          transition: transform 0.5s ease;
         }
-        .run-btn:disabled, .run-btn.loading {
-          border-color: var(--rule);
-          color: var(--fog);
+        .primary-btn:hover:not(:disabled)::before { transform: translateX(100%); }
+        .primary-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 25px var(--accent-glow);
+        }
+        .primary-btn:disabled {
+          background: #2a2a2a;
+          color: #666;
+          box-shadow: none;
           cursor: not-allowed;
         }
-        .run-btn.loading { cursor: default; }
+        .spin { animation: spin 1s linear infinite; }
 
-        /* Reset link */
-        .reset-link {
-          font-family: 'IBM Plex Sans', sans-serif;
-          font-size: 12px;
-          color: var(--fog);
-          background: none;
-          border: none;
-          padding: 0;
-          cursor: pointer;
-          transition: color 120ms ease;
-          text-decoration: none;
+        .kbd-hint {
+          display: flex; align-items: center; gap: 4px;
+          font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted);
         }
-        .reset-link:hover { color: var(--mist); text-decoration: underline; }
+        .kbd-key {
+          background: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border);
+        }
 
-        @keyframes pulse-text {
-          0%, 100% { opacity: 0.4; }
-          50%       { opacity: 0.8; }
+        /* Result Card */
+        .result-card {
+          margin-top: 40px;
+          padding: 32px;
+          border-radius: 20px;
+          position: relative;
+          overflow: hidden;
         }
+        .result-card::before {
+          content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+        }
+        .result-card.contradiction {
+          background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, var(--bg-panel) 100%);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          box-shadow: 0 20px 40px rgba(239, 68, 68, 0.05);
+        }
+        .result-card.contradiction::before { background: var(--danger); }
+        
+        .result-card.clear {
+          background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, var(--bg-panel) 100%);
+          border: 1px solid rgba(16, 185, 129, 0.2);
+          box-shadow: 0 20px 40px rgba(16, 185, 129, 0.05);
+        }
+        .result-card.clear::before { background: var(--success); }
+
+        .result-title {
+          font-size: 32px; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+        }
+        .contradiction .result-title { color: var(--danger); }
+        .clear .result-title { color: var(--success); }
+
+        .result-reason {
+          font-size: 18px; line-height: 1.6; color: rgba(255,255,255,0.9);
+          padding: 20px; background: rgba(0,0,0,0.3); border-radius: 12px;
+          border-left: 3px solid; margin-bottom: 32px;
+        }
+        .contradiction .result-reason { border-left-color: var(--danger); }
+        .clear .result-reason { border-left-color: var(--success); }
+
         .reason-loading {
-          animation: pulse-text 1.8s ease-in-out infinite;
-          font-style: italic;
-        }
-        .reason-text {
-          animation: reveal 300ms ease-out forwards;
-        }
-
-        /* Rules */
-        .h-rule {
-          border: none;
-          border-top: 1px solid var(--rule);
-          width: 100%;
-          margin: 0;
-        }
-        .divider-rule {
-          border: none;
-          border-top: 1px solid var(--rule);
-          flex: 1;
+          background: linear-gradient(90deg, var(--text-muted) 0%, #fff 50%, var(--text-muted) 100%);
+          background-size: 200% auto;
+          color: transparent;
+          -webkit-background-clip: text;
+          animation: sweep 2s linear infinite;
         }
 
-        /* Pre blocks */
-        .scrut-pre {
-          font-family: 'IBM Plex Mono', monospace;
-          font-size: 13px;
-          line-height: 2.0;
-          color: var(--offwhite);
-          background: var(--ink-light);
-          border: 1px solid var(--rule);
-          border-radius: 0;
-          padding: 16px;
-          white-space: pre-wrap;
-          word-break: break-word;
-          margin: 0;
+        .diff-view { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .diff-box {
+          background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+        }
+        .diff-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; display: block; }
+        .diff-content { font-size: 15px; line-height: 1.6; color: var(--text-muted); white-space: pre-wrap; font-family: 'Outfit'; margin: 0; }
+        
+        .metadata-bar {
+          display: flex; align-items: center; gap: 24px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);
+          font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted);
         }
 
-        /* Layout */
-        .main-wrap {
-          max-width: 960px;
-          margin: 0 auto;
-          padding: 0 48px;
-        }
-        .two-col {
-          display: flex;
-          gap: 16px;
-        }
-        .two-col > * { flex: 1; min-width: 0; }
-
-        .action-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding-top: 32px;
-          gap: 16px;
-        }
-        .action-right {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          flex-shrink: 0;
-        }
-
-        .footer-inner {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 16px;
-        }
-
-        @media (max-width: 767px) {
-          .main-wrap { padding: 0 24px; }
-          .two-col { flex-direction: column; gap: 16px; }
-          .two-col > * { width: 100%; }
-          .run-btn { width: 100%; }
-          .action-row { flex-direction: column; align-items: flex-start; }
-          .action-right { width: 100%; justify-content: flex-end; }
-          .footer-inner { flex-direction: column; gap: 8px; align-items: center; }
-          .kbd-hint { display: none; }
+        @media (max-width: 900px) {
+          .diff-view { grid-template-columns: 1fr; }
+          .main-content { padding: 100px 5% 60px; }
         }
       `}</style>
 
-      {/* Fixed Header */}
-      <header
-        className={fadeClass(0)}
-        style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0,
-          height: '52px',
-          backgroundColor: 'var(--ink-light)',
-          borderBottom: '1px solid var(--rule)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 48px',
-          zIndex: 1000,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Shield size={14} color="var(--amber)" strokeWidth={2} />
-          <span style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: '17px',
-            letterSpacing: '0.04em',
-            color: 'var(--white)',
-            fontWeight: 700,
-          }}>SCRUT</span>
-          <Minus size={12} color="var(--rule-light)" style={{ transform: 'rotate(90deg)', display: 'block' }} />
-          <span style={{
-            fontFamily: "'IBM Plex Sans', sans-serif",
-            fontSize: '10px',
-            letterSpacing: '0.35em',
-            fontWeight: 500,
-            color: 'var(--fog)',
-            textTransform: 'uppercase',
-          }}>AUDITOR</span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div
-            className={modelStatus === 'active' ? 'breathe' : ''}
-            style={{
-              width: '7px', height: '7px',
-              borderRadius: '50%',
-              backgroundColor:
-                modelStatus === 'active' ? 'var(--green)'
-                : modelStatus === 'offline' ? 'var(--red)'
-                : 'var(--rule-light)',
-              flexShrink: 0,
-            }}
-          />
-          <span style={{
-            fontFamily: "'IBM Plex Sans', sans-serif",
-            fontSize: '11px',
-            letterSpacing: '0.08em',
-            color: 'var(--mist)',
-            textTransform: 'uppercase',
-          }}>{statusText}</span>
-        </div>
-      </header>
-
-      <main className="main-wrap" style={{ paddingTop: '52px' }}>
-
-        {/* Section 1: Header Block */}
-        <div className={fadeClass(60)} style={{ paddingTop: '56px' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
-            <span style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: '11px',
-              color: 'var(--fog)',
-              letterSpacing: '0.1em',
-              lineHeight: 1,
-              flexShrink: 0,
-            }}>01</span>
-            <span style={{
-              fontFamily: "'IBM Plex Sans', sans-serif",
-              fontSize: '10px',
-              letterSpacing: '0.3em',
-              color: 'var(--fog)',
-              textTransform: 'uppercase',
-              lineHeight: 1,
-            }}>CLAUSE INPUT</span>
+      <nav className={`navbar ${fadeClass(0)}`}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ background: 'var(--gradient-blue)', padding: '8px', borderRadius: '10px' }}>
+            <Shield size={20} color="#fff" />
           </div>
-          <hr className="h-rule" style={{ marginTop: '8px' }} />
-        </div>
-
-        {/* Section 2: Input Zone */}
-        <div className={`two-col ${fadeClass(120)}`} style={{ marginTop: '24px' }}>
-
-          {/* Panel A */}
           <div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '8px',
-            }}>
-              <span style={{
-                fontFamily: "'IBM Plex Sans', sans-serif",
-                fontSize: '10px',
-                letterSpacing: '0.2em',
-                color: 'var(--amber)',
-                textTransform: 'uppercase',
-                fontWeight: 500,
-              }}>A — CURRENT CLAUSE</span>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{
-                  fontFamily: "'IBM Plex Mono', monospace",
-                  fontSize: '10px',
-                  color: 'var(--fog)',
-                }}>{padCount(clauseA.length)} chars</span>
-                {clauseA.length > 0 && (
-                  <button
-                    className="clear-btn"
-                    onClick={() => setClauseA('')}
-                    type="button"
-                    title="Clear"
-                    aria-label="Clear current clause"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            </div>
-            <textarea
-              className="scrut-textarea textarea-a"
-              aria-label="Current clause input"
-              value={clauseA}
-              onChange={(e) => setClauseA(e.target.value)}
-              placeholder="Enter current clause text..."
-            />
-            <div style={{
-              fontFamily: "'IBM Plex Sans', sans-serif",
-              fontSize: '11px',
-              color: 'var(--fog)',
-              marginTop: '6px',
-            }}>The clause under review</div>
-          </div>
-
-          {/* Panel B */}
-          <div className={fadeClass(180)}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '8px',
-            }}>
-              <span style={{
-                fontFamily: "'IBM Plex Sans', sans-serif",
-                fontSize: '10px',
-                letterSpacing: '0.2em',
-                color: 'var(--mist)',
-                textTransform: 'uppercase',
-                fontWeight: 500,
-              }}>B — HISTORICAL CLAUSE</span>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{
-                  fontFamily: "'IBM Plex Mono', monospace",
-                  fontSize: '10px',
-                  color: 'var(--fog)',
-                }}>{padCount(clauseB.length)} chars</span>
-                {clauseB.length > 0 && (
-                  <button
-                    className="clear-btn"
-                    onClick={() => setClauseB('')}
-                    type="button"
-                    title="Clear"
-                    aria-label="Clear historical clause"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            </div>
-            <textarea
-              className="scrut-textarea textarea-b"
-              aria-label="Historical clause input"
-              value={clauseB}
-              onChange={(e) => setClauseB(e.target.value)}
-              placeholder="Enter historical clause text..."
-            />
-            <div style={{
-              fontFamily: "'IBM Plex Sans', sans-serif",
-              fontSize: '11px',
-              color: 'var(--fog)',
-              marginTop: '6px',
-            }}>The reference or baseline clause</div>
+            <h1 style={{ fontSize: '20px', letterSpacing: '-0.02em', color: '#fff' }}>ScrutAuditor</h1>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Legal Inference Engine</div>
           </div>
         </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '30px', border: '1px solid var(--border)' }}>
+          <div className={`status-dot ${modelStatus}`} />
+          <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{statusText}</span>
+        </div>
+      </nav>
 
-        {/* Section 3: Action Row */}
-        <div className={`action-row ${fadeClass(240)}`}>
+      <main className="main-content" style={{ maxWidth: '1200px', margin: '0 auto', padding: '120px 5% 80px' }}>
+        
+        <div className={fadeClass(100)} style={{ textAlign: 'center', marginBottom: '60px' }}>
+          <h2 style={{ fontSize: '48px', fontWeight: 700, letterSpacing: '-0.03em', marginBottom: '16px' }}>
+            Autonomous <span style={{ background: 'var(--gradient-blue)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Contract Auditing</span>
+          </h2>
+          <p style={{ fontSize: '18px', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+            Identify hidden contradictions and conflicting liabilities between current and historical clauses using our fine-tuned 8B parameter model.
+          </p>
+        </div>
 
-          {/* Left: demo options */}
-          <div className="demo-group">
-            <span className="demo-prefix">Example</span>
-            <button
-              className="demo-btn contradiction-btn"
-              type="button"
-              onClick={() => {
+        <div className={`glass-panel ${fadeClass(200)}`} style={{ padding: '32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+            
+            {/* Clause A */}
+            <div>
+              <div className="input-label">
+                <span>Current Clause</span>
+                {clauseA && <button className="clear-btn" onClick={() => setClauseA('')}><Trash2 size={12} /> Clear</button>}
+              </div>
+              <textarea
+                className="scrut-textarea"
+                placeholder="Paste the active clause under review here..."
+                value={clauseA}
+                onChange={(e) => setClauseA(e.target.value)}
+              />
+            </div>
+
+            {/* Clause B */}
+            <div>
+              <div className="input-label">
+                <span>Historical Context</span>
+                {clauseB && <button className="clear-btn" onClick={() => setClauseB('')}><Trash2 size={12} /> Clear</button>}
+              </div>
+              <textarea
+                className="scrut-textarea"
+                placeholder="Paste the reference clause or historical standard here..."
+                value={clauseB}
+                onChange={(e) => setClauseB(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginTop: '32px', gap: '20px' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>Try an example:</span>
+              <button className="demo-btn" onClick={() => {
                 const pair = DEMOS.contradiction[Math.floor(Math.random() * DEMOS.contradiction.length)];
-                setClauseA(pair.a);
-                setClauseB(pair.b);
-                setResult(null);
-                setError(false);
-              }}
-            >
-              Contradiction
-            </button>
-            <button
-              className="demo-btn clear-btn-demo"
-              type="button"
-              onClick={() => {
+                setClauseA(pair.a); setClauseB(pair.b); setResult(null); setError(false);
+              }}>Contradiction</button>
+              <button className="demo-btn" onClick={() => {
                 const pair = DEMOS.clear[Math.floor(Math.random() * DEMOS.clear.length)];
-                setClauseA(pair.a);
-                setClauseB(pair.b);
-                setResult(null);
-                setError(false);
-              }}
-            >
-              No Contradiction
-            </button>
-          </div>
+                setClauseA(pair.a); setClauseB(pair.b); setResult(null); setError(false);
+              }}>Standard</button>
+            </div>
 
-          {/* Right: keyboard hint + run button */}
-          <div className="action-right">
-            {canRun && !isLoading && (
-              <span className="kbd-hint">
-                {navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'} + Return
-              </span>
-            )}
-            <button
-              className={`run-btn${isLoading ? ' loading' : ''}`}
-              disabled={!canRun || isLoading}
-              aria-disabled={!canRun || isLoading}
-              onClick={runAnalysis}
-              type="button"
-            >
-              {isLoading ? (
-                <><Loader size={14} className="spin" /> AUDITING</>
-              ) : 'RUN ANALYSIS'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              {canRun && !isLoading && (
+                <div className="kbd-hint">
+                  <span className="kbd-key">{navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}</span>
+                  <span>+</span>
+                  <span className="kbd-key">Enter</span>
+                </div>
+              )}
+              <button 
+                className="primary-btn" 
+                disabled={!canRun || isLoading}
+                onClick={runAnalysis}
+              >
+                {isLoading ? <><Loader size={18} className="spin" /> Auditing...</> : <><Sparkles size={18} /> Run Audit</>}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Anchor for scroll target */}
-        <div ref={resultRef} style={{ marginTop: '32px' }} />
+        <div ref={resultRef} />
 
-        {/* Section 6: Error State */}
         {error && (
-          <div style={{
-            borderLeft: '3px solid var(--red)',
-            backgroundColor: 'var(--red-dim)',
-            padding: '14px 18px',
-          }}>
-            <p style={{
-              fontFamily: "'IBM Plex Sans', sans-serif",
-              fontSize: '13px',
-              color: 'var(--red)',
-              lineHeight: 1.6,
-              margin: 0,
-            }}>
-              Analysis failed. Confirm the inference model is running at the expected endpoint and retry.
-            </p>
+          <div className="fade-in-0 glass-panel" style={{ marginTop: '40px', padding: '24px', border: '1px solid var(--danger)', background: 'var(--danger-glow)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--danger)' }}>
+              <AlertTriangle size={24} />
+              <p style={{ margin: 0, fontSize: '16px', fontWeight: 500 }}>Connection to the inference engine failed. Please ensure the model is online and try again.</p>
+            </div>
           </div>
         )}
 
-        {/* Section 4 + 5: Divider + Results */}
         {result && (
-          <div className="reveal">
-
-            {/* Section 4: Divider */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              margin: '8px 0 32px',
-            }}>
-              <hr className="divider-rule" />
-              <span style={{
-                fontFamily: "'IBM Plex Sans', sans-serif",
-                fontSize: '9px',
-                letterSpacing: '0.35em',
-                color: 'var(--fog)',
-                textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
-              }}>AUDIT RESULT</span>
-              <hr className="divider-rule" />
+          <div className={`result-card glass-panel fade-in-0 ${result.contradiction_found ? 'contradiction' : 'clear'}`}>
+            <div className="result-title">
+              {result.contradiction_found ? <><AlertTriangle size={36} /> Critical Contradiction Detected</> : <><CheckCircle size={36} /> Clauses Aligned</>}
             </div>
 
-            {/* 5a: Verdict Block */}
-            <div
-              role="status"
-              aria-live="polite"
-              style={{
-                position: 'relative',
-                backgroundColor: result.contradiction_found ? 'var(--amber-dim)' : 'var(--green-dim)',
-                borderTop: `1px solid ${result.contradiction_found ? 'var(--amber-mute)' : 'var(--green-mute)'}`,
-                borderBottom: `1px solid ${result.contradiction_found ? 'var(--amber-mute)' : 'var(--green-mute)'}`,
-                padding: '28px 28px 28px 24px',
-              }}
-            >
-              <div style={{
-                position: 'absolute',
-                left: 0, top: 0, bottom: 0,
-                width: '3px',
-                backgroundColor: result.contradiction_found ? 'var(--amber)' : 'var(--green)',
-              }} />
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                {result.contradiction_found
-                  ? <AlertTriangle size={16} color="var(--amber)" strokeWidth={1.5} />
-                  : <CheckCircle size={16} color="var(--green)" strokeWidth={1.5} />
-                }
-                <h2 style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontSize: '32px',
-                  fontStyle: 'italic',
-                  fontWeight: 700,
-                  color: result.contradiction_found ? 'var(--amber)' : 'var(--green)',
-                  lineHeight: 1.1,
-                  margin: 0,
-                }}>
-                  {result.contradiction_found ? 'Contradiction Detected' : 'No Contradiction Detected'}
-                </h2>
-              </div>
-
-              <p style={{
-                fontFamily: "'IBM Plex Sans', sans-serif",
-                fontSize: '14px',
-                lineHeight: 1.7,
-                margin: 0,
-                color: reasonLoading ? 'var(--fog)' : 'var(--paper)',
-              }}>
-                {reasonLoading ? (
-                  <span className="reason-loading">Analyzing rationale...</span>
-                ) : reason ? (
-                  <span className="reason-text">{reason}</span>
-                ) : (
-                  result.contradiction_found
-                    ? 'The two clauses are in direct conflict. Legal review is required before execution.'
-                    : 'The audit model found no conflicting obligations between these clauses.'
-                )}
-              </p>
+            <div className="result-reason">
+              {reasonLoading ? (
+                <span className="reason-loading">Synthesizing rationale from the 8B parameter model...</span>
+              ) : reason ? (
+                reason
+              ) : (
+                result.contradiction_found ? 'A material discrepancy exists between the obligations in these clauses.' : 'No direct conflict in obligations was found during the audit.'
+              )}
             </div>
 
-            {/* 5b: Clause Display */}
-            <div style={{ marginTop: '40px' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
-                <span style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontSize: '11px',
-                  color: 'var(--fog)',
-                  letterSpacing: '0.1em',
-                  lineHeight: 1,
-                  flexShrink: 0,
-                }}>02</span>
-                <span style={{
-                  fontFamily: "'IBM Plex Sans', sans-serif",
-                  fontSize: '10px',
-                  letterSpacing: '0.3em',
-                  color: 'var(--fog)',
-                  textTransform: 'uppercase',
-                  lineHeight: 1,
-                }}>REVIEWED CLAUSES</span>
+            <div className="diff-view">
+              <div className="diff-box">
+                <span className="diff-label">Current Statement</span>
+                <pre className="diff-content">{result.current_statement}</pre>
               </div>
-              <hr className="h-rule" style={{ marginTop: '8px', marginBottom: '24px' }} />
-
-              <div className="two-col">
-                <div>
-                  <div style={{ marginBottom: '8px' }}>
-                    <span style={{
-                      fontFamily: "'IBM Plex Sans', sans-serif",
-                      fontSize: '10px',
-                      letterSpacing: '0.2em',
-                      color: 'var(--amber)',
-                      textTransform: 'uppercase',
-                      fontWeight: 500,
-                    }}>A — CURRENT CLAUSE</span>
-                  </div>
-                  <pre className="scrut-pre">{result.current_statement}</pre>
-                </div>
-
-                <div>
-                  <div style={{ marginBottom: '8px' }}>
-                    <span style={{
-                      fontFamily: "'IBM Plex Sans', sans-serif",
-                      fontSize: '10px',
-                      letterSpacing: '0.2em',
-                      color: 'var(--mist)',
-                      textTransform: 'uppercase',
-                      fontWeight: 500,
-                    }}>B — HISTORICAL CLAUSE</span>
-                  </div>
-                  <pre className="scrut-pre">{result.historical_statement}</pre>
-                </div>
+              <div className="diff-box">
+                <span className="diff-label">Historical Statement</span>
+                <pre className="diff-content">{result.historical_statement}</pre>
               </div>
             </div>
 
-            {/* 5c: Metadata + Reset */}
-            <div style={{ marginTop: '24px' }}>
-              <p style={{
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: '10px',
-                color: 'var(--fog)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                margin: 0,
-              }}>
-                MODEL: SCRUT-AUDITOR:LATEST{'   '}|{'   '}PARAMS: 8B{'   '}|{'   '}QUANT: Q4_K_M{'   '}|{'   '}MODE: ON-PREMISE{'   '}|{'   '}DURATION: {duration}MS
-              </p>
-              <div style={{ textAlign: 'right', marginTop: '12px' }}>
-                <button className="reset-link" onClick={resetAll} type="button">
-                  Run new analysis
-                </button>
-              </div>
+            <div className="metadata-bar">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Cpu size={14} /> SCRUT-AUDITOR:LATEST</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Server size={14} /> ON-PREMISE</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Command size={14} /> {duration}MS</div>
             </div>
           </div>
         )}
-
-        {/* Section 7: Footer */}
-        <footer style={{ paddingTop: '64px', paddingBottom: '40px' }}>
-          <hr className="h-rule" />
-          <div className="footer-inner">
-            <span style={{
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: '10px',
-              color: 'var(--fog)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.15em',
-            }}>SCRUT AUDITOR — ON-PREMISE LEGAL INFERENCE</span>
-            <span style={{
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: '10px',
-              color: 'var(--fog)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.15em',
-            }}>SCRUT-AUDITOR:LATEST — LLAMA 3 8B — Q4_K_M</span>
-          </div>
-        </footer>
-
       </main>
     </>
   );
