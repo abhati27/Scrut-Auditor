@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Shield, AlertTriangle, CheckCircle, Loader, Cpu, Command, Trash2, Sparkles, Server } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Loader, Cpu, Command, Trash2, ArrowRight, FileText } from 'lucide-react';
 
 const DEMOS = {
   contradiction: [
@@ -149,42 +149,33 @@ export default function ScrutAuditor() {
     }
   };
 
-  const resetAll = () => {
-    setClauseA('');
-    setClauseB('');
-    setResult(null);
-    setReason(null);
-    setReasonLoading(false);
-    setError(false);
-    setDuration(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const canRun = clauseA.trim().length > 0 && clauseB.trim().length > 0;
   const statusText =
-    modelStatus === 'active' ? 'MODEL ONLINE' : modelStatus === 'offline' ? 'MODEL OFFLINE' : 'CONNECTING...';
+    modelStatus === 'active' ? 'System Online' : modelStatus === 'offline' ? 'System Offline' : 'Connecting...';
 
   const fadeClass = (delay) => (mounted ? `fade-in-${delay}` : 'initially-hidden');
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
         :root {
-          --bg-base: #050505;
-          --bg-panel: rgba(20, 20, 22, 0.7);
-          --border: rgba(255, 255, 255, 0.1);
-          --border-glow: rgba(255, 255, 255, 0.2);
-          --text-main: #f8f8f8;
-          --text-muted: #a1a1aa;
-          --accent: #3b82f6;
-          --accent-glow: rgba(59, 130, 246, 0.5);
-          --danger: #ef4444;
-          --danger-glow: rgba(239, 68, 68, 0.2);
-          --success: #10b981;
-          --success-glow: rgba(16, 185, 129, 0.2);
-          --gradient-blue: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+          --bg-base: #FAFAFA;
+          --bg-panel: #FFFFFF;
+          --border: #E5E7EB;
+          --border-focus: #D1D5DB;
+          --text-main: #111827;
+          --text-muted: #6B7280;
+          --text-light: #9CA3AF;
+          --primary: #111827;
+          --primary-hover: #374151;
+          --danger-bg: #FEF2F2;
+          --danger-border: #FCA5A5;
+          --danger-text: #991B1B;
+          --success-bg: #F0FDF4;
+          --success-border: #86EFAC;
+          --success-text: #166534;
         }
 
         *, *::before, *::after { box-sizing: border-box; }
@@ -193,98 +184,53 @@ export default function ScrutAuditor() {
           margin: 0;
           background-color: var(--bg-base);
           color: var(--text-main);
-          font-family: 'Outfit', sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
           min-height: 100vh;
           overflow-x: hidden;
+          -webkit-font-smoothing: antialiased;
         }
 
-        /* Abstract glowing orbs in background */
-        body::before {
-          content: '';
-          position: fixed;
-          top: -20%; left: -10%;
-          width: 50vw; height: 50vw;
-          background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%);
-          border-radius: 50%;
-          z-index: -1;
-          pointer-events: none;
-        }
-        body::after {
-          content: '';
-          position: fixed;
-          bottom: -20%; right: -10%;
-          width: 60vw; height: 60vw;
-          background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, rgba(0,0,0,0) 70%);
-          border-radius: 50%;
-          z-index: -1;
-          pointer-events: none;
-        }
-
-        .glass-panel {
+        .panel {
           background: var(--bg-panel);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
           border: 1px solid var(--border);
-          border-radius: 16px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-          transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-        .glass-panel:hover {
-          border-color: var(--border-glow);
+          border-radius: 8px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         h1, h2, h3, h4 { margin: 0; font-weight: 600; }
 
         @keyframes reveal {
-          from { opacity: 0; transform: translateY(20px); }
+          from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse-status {
-          0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-          50%      { opacity: 0.8; transform: scale(0.95); box-shadow: 0 0 10px 4px rgba(16, 185, 129, 0); }
         }
         @keyframes spin {
           from { transform: rotate(0deg); }
           to   { transform: rotate(360deg); }
         }
-        @keyframes sweep {
-          0% { background-position: 0% 50%; }
-          100% { background-position: 200% 50%; }
-        }
 
         .initially-hidden { opacity: 0; }
-        .fade-in-0   { animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0ms   both; }
-        .fade-in-100 { animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) 100ms both; }
-        .fade-in-200 { animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) 200ms both; }
-        .fade-in-300 { animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) 300ms both; }
+        .fade-in-0   { animation: reveal 0.4s ease-out 0ms   both; }
+        .fade-in-100 { animation: reveal 0.4s ease-out 100ms both; }
+        .fade-in-200 { animation: reveal 0.4s ease-out 200ms both; }
 
         .status-dot {
           width: 8px; height: 8px;
           border-radius: 50%;
         }
-        .status-dot.active {
-          background-color: var(--success);
-          animation: pulse-status 2s infinite;
-        }
-        .status-dot.offline {
-          background-color: var(--danger);
-        }
-        .status-dot.checking {
-          background-color: var(--text-muted);
-        }
+        .status-dot.active { background-color: #10B981; }
+        .status-dot.offline { background-color: #EF4444; }
+        .status-dot.checking { background-color: #D1D5DB; }
 
         /* Nav */
         .navbar {
           position: fixed;
           top: 0; left: 0; right: 0;
-          height: 70px;
+          height: 64px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 5%;
-          background: rgba(5, 5, 5, 0.5);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
+          padding: 0 32px;
+          background: var(--bg-panel);
           border-bottom: 1px solid var(--border);
           z-index: 1000;
         }
@@ -292,208 +238,189 @@ export default function ScrutAuditor() {
         /* Textareas */
         .input-label {
           display: flex; justify-content: space-between; align-items: center;
-          font-size: 13px; font-weight: 500; letter-spacing: 0.1em;
-          color: var(--text-muted); text-transform: uppercase;
-          margin-bottom: 12px;
+          font-size: 13px; font-weight: 500;
+          color: var(--text-main);
+          margin-bottom: 8px;
         }
         .scrut-textarea {
           width: 100%;
-          min-height: 220px;
-          background: rgba(0, 0, 0, 0.2);
+          min-height: 200px;
+          background: var(--bg-base);
           border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 20px;
-          font-family: 'Outfit', sans-serif;
-          font-size: 16px;
+          border-radius: 6px;
+          padding: 16px;
+          font-family: 'Inter', sans-serif;
+          font-size: 14px;
           line-height: 1.6;
           color: var(--text-main);
           resize: vertical;
           outline: none;
-          transition: all 0.3s ease;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
-        .scrut-textarea::placeholder { color: rgba(255, 255, 255, 0.2); }
+        .scrut-textarea::placeholder { color: var(--text-light); }
         .scrut-textarea:focus {
-          border-color: var(--accent);
-          background: rgba(59, 130, 246, 0.03);
-          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+          border-color: var(--primary);
+          box-shadow: 0 0 0 1px var(--primary);
+          background: var(--bg-panel);
         }
 
         .clear-btn {
           background: none; border: none; cursor: pointer;
-          color: var(--text-muted); transition: color 0.2s;
-          display: flex; align-items: center; gap: 4px; font-size: 12px; font-family: 'Outfit';
+          color: var(--text-muted); transition: color 0.15s;
+          display: flex; align-items: center; gap: 4px; font-size: 12px; font-family: 'Inter';
         }
-        .clear-btn:hover { color: var(--danger); }
+        .clear-btn:hover { color: var(--text-main); }
 
         /* Buttons */
         .demo-btn {
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--bg-panel);
           border: 1px solid var(--border);
-          color: var(--text-muted);
-          padding: 8px 16px;
-          border-radius: 30px;
-          font-family: 'Outfit', sans-serif;
+          color: var(--text-main);
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-family: 'Inter', sans-serif;
           font-size: 13px;
           font-weight: 500;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.15s ease;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
         .demo-btn:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: var(--text-main);
-          border-color: rgba(255, 255, 255, 0.3);
+          border-color: var(--border-focus);
+          background: var(--bg-base);
         }
 
         .primary-btn {
-          background: var(--gradient-blue);
-          border: none;
+          background: var(--primary);
+          border: 1px solid var(--primary);
           color: #fff;
-          font-family: 'Outfit', sans-serif;
-          font-size: 15px;
-          font-weight: 600;
-          letter-spacing: 0.05em;
-          padding: 0 32px;
-          height: 54px;
-          border-radius: 12px;
+          font-family: 'Inter', sans-serif;
+          font-size: 14px;
+          font-weight: 500;
+          padding: 0 24px;
+          height: 40px;
+          border-radius: 6px;
           cursor: pointer;
-          display: flex; align-items: center; justify-content: center; gap: 10px;
-          transition: all 0.3s ease;
-          position: relative;
-          overflow: hidden;
-          box-shadow: 0 4px 20px var(--accent-glow);
+          display: flex; align-items: center; justify-content: center; gap: 8px;
+          transition: background 0.15s ease;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
-        .primary-btn::before {
-          content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-          transform: translateX(-100%);
-          transition: transform 0.5s ease;
-        }
-        .primary-btn:hover:not(:disabled)::before { transform: translateX(100%); }
         .primary-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 25px var(--accent-glow);
+          background: var(--primary-hover);
         }
         .primary-btn:disabled {
-          background: #2a2a2a;
-          color: #666;
-          box-shadow: none;
+          background: var(--bg-base);
+          border-color: var(--border);
+          color: var(--text-light);
           cursor: not-allowed;
+          box-shadow: none;
         }
         .spin { animation: spin 1s linear infinite; }
 
         .kbd-hint {
           display: flex; align-items: center; gap: 4px;
-          font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted);
+          font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-muted);
         }
         .kbd-key {
-          background: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border);
+          background: var(--bg-base); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border);
+          font-family: 'JetBrains Mono', monospace; font-size: 11px;
         }
 
         /* Result Card */
         .result-card {
-          margin-top: 40px;
-          padding: 32px;
-          border-radius: 20px;
-          position: relative;
-          overflow: hidden;
-        }
-        .result-card::before {
-          content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+          margin-top: 32px;
+          padding: 24px;
+          border-radius: 8px;
+          border: 1px solid var(--border);
         }
         .result-card.contradiction {
-          background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, var(--bg-panel) 100%);
-          border: 1px solid rgba(239, 68, 68, 0.2);
-          box-shadow: 0 20px 40px rgba(239, 68, 68, 0.05);
+          background: var(--danger-bg);
+          border-color: var(--danger-border);
         }
-        .result-card.contradiction::before { background: var(--danger); }
-        
         .result-card.clear {
-          background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, var(--bg-panel) 100%);
-          border: 1px solid rgba(16, 185, 129, 0.2);
-          box-shadow: 0 20px 40px rgba(16, 185, 129, 0.05);
+          background: var(--success-bg);
+          border-color: var(--success-border);
         }
-        .result-card.clear::before { background: var(--success); }
 
         .result-title {
-          font-size: 32px; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+          font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
         }
-        .contradiction .result-title { color: var(--danger); }
-        .clear .result-title { color: var(--success); }
+        .contradiction .result-title { color: var(--danger-text); }
+        .clear .result-title { color: var(--success-text); }
 
         .result-reason {
-          font-size: 18px; line-height: 1.6; color: rgba(255,255,255,0.9);
-          padding: 20px; background: rgba(0,0,0,0.3); border-radius: 12px;
-          border-left: 3px solid; margin-bottom: 32px;
+          font-size: 15px; line-height: 1.6;
+          margin-bottom: 24px;
         }
-        .contradiction .result-reason { border-left-color: var(--danger); }
-        .clear .result-reason { border-left-color: var(--success); }
+        .contradiction .result-reason { color: var(--danger-text); }
+        .clear .result-reason { color: var(--success-text); }
 
         .reason-loading {
-          background: linear-gradient(90deg, var(--text-muted) 0%, #fff 50%, var(--text-muted) 100%);
-          background-size: 200% auto;
-          color: transparent;
-          -webkit-background-clip: text;
-          animation: sweep 2s linear infinite;
+          opacity: 0.7;
+          animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
         }
 
         .diff-view { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         .diff-box {
-          background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+          background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 16px;
         }
-        .diff-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; display: block; }
-        .diff-content { font-size: 15px; line-height: 1.6; color: var(--text-muted); white-space: pre-wrap; font-family: 'Outfit'; margin: 0; }
+        .diff-label { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 8px; display: block; }
+        .diff-content { font-size: 14px; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; font-family: 'Inter'; margin: 0; }
         
         .metadata-bar {
-          display: flex; align-items: center; gap: 24px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);
+          display: flex; align-items: center; gap: 24px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);
           font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted);
         }
+        .contradiction .metadata-bar { border-top-color: var(--danger-border); color: var(--danger-text); opacity: 0.8; }
+        .clear .metadata-bar { border-top-color: var(--success-border); color: var(--success-text); opacity: 0.8; }
 
         @media (max-width: 900px) {
           .diff-view { grid-template-columns: 1fr; }
-          .main-content { padding: 100px 5% 60px; }
+          .main-content { padding: 80px 20px 60px; }
         }
       `}</style>
 
       <nav className={`navbar ${fadeClass(0)}`}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ background: 'var(--gradient-blue)', padding: '8px', borderRadius: '10px' }}>
-            <Shield size={20} color="#fff" />
-          </div>
-          <div>
-            <h1 style={{ fontSize: '20px', letterSpacing: '-0.02em', color: '#fff' }}>ScrutAuditor</h1>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Legal Inference Engine</div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Shield size={20} color="var(--primary)" />
+          <h1 style={{ fontSize: '16px', fontWeight: 600, color: var(--text-main) }}>ScrutAuditor</h1>
+          <span style={{ color: var(--border), margin: '0 8px' }}>|</span>
+          <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Contract Analysis</span>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '30px', border: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div className={`status-dot ${modelStatus}`} />
-          <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{statusText}</span>
+          <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>{statusText}</span>
         </div>
       </nav>
 
-      <main className="main-content" style={{ maxWidth: '1200px', margin: '0 auto', padding: '120px 5% 80px' }}>
+      <main className="main-content" style={{ maxWidth: '1000px', margin: '0 auto', padding: '100px 32px 80px' }}>
         
-        <div className={fadeClass(100)} style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <h2 style={{ fontSize: '48px', fontWeight: 700, letterSpacing: '-0.03em', marginBottom: '16px' }}>
-            Autonomous <span style={{ background: 'var(--gradient-blue)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Contract Auditing</span>
+        <div className={fadeClass(100)} style={{ marginBottom: '40px' }}>
+          <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>
+            Contract Auditor
           </h2>
-          <p style={{ fontSize: '18px', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
-            Identify hidden contradictions and conflicting liabilities between current and historical clauses using our fine-tuned 8B parameter model.
+          <p style={{ fontSize: '16px', color: 'var(--text-muted)', margin: 0 }}>
+            Compare active clauses against historical standards to identify material discrepancies.
           </p>
         </div>
 
-        <div className={`glass-panel ${fadeClass(200)}`} style={{ padding: '32px' }}>
+        <div className={`panel ${fadeClass(200)}`} style={{ padding: '24px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
             
             {/* Clause A */}
             <div>
               <div className="input-label">
                 <span>Current Clause</span>
-                {clauseA && <button className="clear-btn" onClick={() => setClauseA('')}><Trash2 size={12} /> Clear</button>}
+                {clauseA && <button className="clear-btn" onClick={() => setClauseA('')}>Clear</button>}
               </div>
               <textarea
                 className="scrut-textarea"
-                placeholder="Paste the active clause under review here..."
+                placeholder="Enter the active clause under review..."
                 value={clauseA}
                 onChange={(e) => setClauseA(e.target.value)}
               />
@@ -503,20 +430,20 @@ export default function ScrutAuditor() {
             <div>
               <div className="input-label">
                 <span>Historical Context</span>
-                {clauseB && <button className="clear-btn" onClick={() => setClauseB('')}><Trash2 size={12} /> Clear</button>}
+                {clauseB && <button className="clear-btn" onClick={() => setClauseB('')}>Clear</button>}
               </div>
               <textarea
                 className="scrut-textarea"
-                placeholder="Paste the reference clause or historical standard here..."
+                placeholder="Enter the reference clause or baseline standard..."
                 value={clauseB}
                 onChange={(e) => setClauseB(e.target.value)}
               />
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginTop: '32px', gap: '20px' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>Try an example:</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', gap: '16px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Load template:</span>
               <button className="demo-btn" onClick={() => {
                 const pair = DEMOS.contradiction[Math.floor(Math.random() * DEMOS.contradiction.length)];
                 setClauseA(pair.a); setClauseB(pair.b); setResult(null); setError(false);
@@ -527,7 +454,7 @@ export default function ScrutAuditor() {
               }}>Standard</button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               {canRun && !isLoading && (
                 <div className="kbd-hint">
                   <span className="kbd-key">{navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}</span>
@@ -540,7 +467,7 @@ export default function ScrutAuditor() {
                 disabled={!canRun || isLoading}
                 onClick={runAnalysis}
               >
-                {isLoading ? <><Loader size={18} className="spin" /> Auditing...</> : <><Sparkles size={18} /> Run Audit</>}
+                {isLoading ? <><Loader size={16} className="spin" /> Analyzing...</> : <>Run Audit <ArrowRight size={16} /></>}
               </button>
             </div>
           </div>
@@ -549,45 +476,47 @@ export default function ScrutAuditor() {
         <div ref={resultRef} />
 
         {error && (
-          <div className="fade-in-0 glass-panel" style={{ marginTop: '40px', padding: '24px', border: '1px solid var(--danger)', background: 'var(--danger-glow)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--danger)' }}>
-              <AlertTriangle size={24} />
-              <p style={{ margin: 0, fontSize: '16px', fontWeight: 500 }}>Connection to the inference engine failed. Please ensure the model is online and try again.</p>
+          <div className="fade-in-0 result-card contradiction" style={{ marginTop: '32px' }}>
+            <div className="result-title">
+              <AlertTriangle size={20} /> Connection Error
+            </div>
+            <div className="result-reason">
+              Failed to reach the inference engine. Please ensure the model is online.
             </div>
           </div>
         )}
 
         {result && (
-          <div className={`result-card glass-panel fade-in-0 ${result.contradiction_found ? 'contradiction' : 'clear'}`}>
+          <div className={`result-card fade-in-0 ${result.contradiction_found ? 'contradiction' : 'clear'}`}>
             <div className="result-title">
-              {result.contradiction_found ? <><AlertTriangle size={36} /> Critical Contradiction Detected</> : <><CheckCircle size={36} /> Clauses Aligned</>}
+              {result.contradiction_found ? <><AlertTriangle size={20} /> Material Discrepancy Found</> : <><CheckCircle size={20} /> Clauses Aligned</>}
             </div>
 
             <div className="result-reason">
               {reasonLoading ? (
-                <span className="reason-loading">Synthesizing rationale from the 8B parameter model...</span>
+                <span className="reason-loading">Generating rationale...</span>
               ) : reason ? (
                 reason
               ) : (
-                result.contradiction_found ? 'A material discrepancy exists between the obligations in these clauses.' : 'No direct conflict in obligations was found during the audit.'
+                result.contradiction_found ? 'A direct conflict exists between the obligations in these clauses.' : 'No direct conflict in obligations was found.'
               )}
             </div>
 
             <div className="diff-view">
               <div className="diff-box">
                 <span className="diff-label">Current Statement</span>
-                <pre className="diff-content">{result.current_statement}</pre>
+                <div className="diff-content">{result.current_statement}</div>
               </div>
               <div className="diff-box">
                 <span className="diff-label">Historical Statement</span>
-                <pre className="diff-content">{result.historical_statement}</pre>
+                <div className="diff-content">{result.historical_statement}</div>
               </div>
             </div>
 
             <div className="metadata-bar">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Cpu size={14} /> SCRUT-AUDITOR:LATEST</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Server size={14} /> ON-PREMISE</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Command size={14} /> {duration}MS</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Cpu size={14} /> SCRUT-AUDITOR:LATEST</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FileText size={14} /> ON-PREMISE</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Command size={14} /> {duration}ms</div>
             </div>
           </div>
         )}
